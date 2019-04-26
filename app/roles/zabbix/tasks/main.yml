@@ -1,0 +1,141 @@
+- name: ensure zabbix install working directory exists
+  file:
+    path: "/var/local/ansible/zabbix"
+    state: directory
+  tags:
+    - zabbix
+    - filesystem
+
+- name: ensure the installer rpm exists
+  get_url:
+    url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/rhel/7/x86_64/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+    dest: "/var/local/ansible/zabbix/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+  register: rpm_download
+  tags:
+    - zabbix
+
+- name: ensure zabbix installer repos are configured
+  yum:
+    name: "/var/local/ansible/zabbix/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+    state: present
+  tags:
+    - zabbix
+
+- name: ensure optional repos are enabled
+  command: yum-config-manager --enable '*optional*'
+  tags:
+    - zabbix
+
+- name: ensure selinux is permissive
+  lineinfile:
+    line: 'SELINUX=permissive'
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+  register: selinux
+  tags:
+    - zabbix
+
+- name: disable selinux now
+  command:
+    setenforce 0
+  when: selinux.changed
+  tags:
+    - zabbix
+
+- name: ensure zabbix and deps are installed
+  yum:
+    name: 'zabbix-server-mysql, zabbix-web-mysql, mariadb-server, MySQL-python'
+    state: present
+  tags:
+    - zabbix
+
+- name: ensure mariadb is running/enabled
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+  tags:
+    - zabbix
+
+- name: ensure zabbix user exists in mysql
+  mysql_user:
+    name: zabbix
+    password: zabbix
+    priv: '*.*:ALL'
+    state: present
+  tags:
+    - zabbix
+
+- name: ensure zabbix database exists in mysql
+  mysql_db:
+    name: zabbix
+    state: present
+  tags:
+    - zabbix
+
+- name: ensure db schema is loaded
+  command: |
+    zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -pzabbix zabbix
+  args:
+    creates: /var/lib/mysql/zabbix
+  tags:
+    - zabbix
+
+- name: ensure zabbix server is configured
+  template:
+    src: zabbix_server.conf.j2
+    dest: /etc/zabbix/zabbix_server.conf
+  tags:
+    - zabbix
+
+- name: ensure log directory exists
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: 0770
+  tags:
+    - zabbix
+
+- name: ensure zabbix home dir exists
+  file:
+    path: /var/lib/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: 0770
+  tags:
+    - zabbix
+
+- name: ensure zabbix server is running/enabled
+  service:
+    name: zabbix-server
+    state: started
+    enabled: yes
+  tags:
+    - zabbix
+
+- name: ensure php timezone is configure
+  lineinfile:
+    line: 'date.timezone = America/New_York'
+    dest: /etc/php.ini
+  tags:
+    - zabbix
+
+- name: ensure apache is running/enabled
+  service:
+    name: httpd
+    state: started
+  tags:
+    - zabbix
+
+- name: ensure zabbix frontend is configure
+  template:
+    src: zabbix.conf.php.j2
+    dest: /etc/zabbix/web/zabbix.conf.php
+    owner: apache
+    group: apache
+    mode: 0600
+  tags:
+    - zabbix

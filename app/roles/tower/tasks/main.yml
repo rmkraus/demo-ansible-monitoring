@@ -1,0 +1,91 @@
+---
+# tasks file for tower
+
+- name: ensure tower install working directory exists
+  file:
+    path: "/var/local/ansible/tower"
+    state: directory
+  tags:
+    - tower
+    - filesystem
+
+- name: ensure tower installer is downloaded
+  get_url:
+    url: "{{ tower_installer_repo }}/ansible-tower-setup-{{ tower_version }}.tar.gz"
+    dest: "/var/local/ansible/tower/ansible-tower-setup-{{ tower_version }}.tar.gz"
+  register: tower_download
+  tags:
+    - tower
+    - packages
+
+- name: ensure tower installer is extracted
+  unarchive:
+    src: "/var/local/ansible/tower/ansible-tower-setup-{{ tower_version }}.tar.gz"
+    dest: "/var/local/ansible/tower"
+    remote_src: yes
+  tags:
+    - tower
+    - packages
+
+- name: ensure inventory file has been created
+  template:
+    src: inventory.j2
+    dest: "/var/local/ansible/tower/ansible-tower-setup-{{ tower_version }}/inventory"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - tower
+    - packages
+
+- name: ensure tower has been installed
+  shell: |
+    umask 0022
+    ./setup.sh
+  args:
+    chdir: "/var/local/ansible/tower/ansible-tower-setup-{{ tower_version }}"
+    creates: "/usr/bin/ansible-tower-service"
+  tags:
+    - tower
+    - packages
+
+- name: ensure custom ssl certificates are installed
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: awx
+    mode: 0640
+  loop:
+    - src: "{{ tower_ssl_cert }}"
+      dest: "/etc/tower/tower.cert"
+    - src: "{{ tower_ssl_key }}"
+      dest: "/etc/tower/tower.key"
+  when: tower_custom_cert
+  notify: restart tower
+  tags:
+    - tower
+    - ssl
+    - config
+
+- name: ensure license file is installed
+  uri:
+      url: "https://{{ ansible_host }}/api/v2/config"
+      method: POST
+      user: "admin"
+      password: "{{ tower_admin_password }}"
+      force_basic_auth: yes
+      body_format: json
+      src: "{{ tower_license_file }}"
+      validate_certs: no
+      follow_redirects: yes
+  delegate_to: localhost
+  become: no
+  ignore_errors: yes
+  register: license
+  changed_when: 'license.json.license_info != {}'
+  tags:
+    - tower
+    - license
+    - config
+

@@ -1,0 +1,25 @@
+#!/usr/bin/ansible-playbook
+---
+- name: destroy
+  gather_facts: no
+  hosts: localhost
+
+  tasks:
+    - name: ensure terraform infrastructure has been destroyed
+      terraform:
+        project_path: "./tf/"
+        state: absent
+      tags:
+        - terraform
+        - infra
+
+    - name: ensure ssh key pair has been destroyed
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /data/id_rsa
+        - /data/id_rsa.pub
+      tags:
+        - keypair
+...

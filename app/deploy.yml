@@ -1,0 +1,81 @@
+#!/usr/bin/ansible-playbook
+---
+# -----------------------------------------------------------------------------
+
+- name: bootstrap
+  gather_facts: no
+  hosts: localhost
+
+  tasks:
+    - name: ensure ssh key pair has been created
+      command: |
+        /usr/bin/ssh-keygen -f /data/id_rsa -q -C "" -N ""
+      args:
+        creates: /data/id_rsa
+      tags:
+        - keypair
+
+    - name: ensure terraform infrastructure has been built
+      terraform:
+        project_path: "./tf/"
+        state: present
+      tags:
+        - terraform
+        - infra
+
+  roles:
+    - inventory
+
+# -----------------------------------------------------------------------------
+
+- name: prepare hosts
+  gather_facts: no
+  hosts: all
+  become: yes
+
+  handlers:
+    - name: reboot hosts
+      reboot:
+      listen: reboot
+
+    - name: wait for hosts
+      wait_for_connection:
+        sleep: 15
+      listen: reboot
+
+  tasks:
+    - name: ensure hosts are reachable
+      wait_for_connection:
+        sleep: 15
+
+    - name: ensure hosts are updated
+      yum:
+        name: '*'
+        state: latest
+      notify: reboot
+
+# -----------------------------------------------------------------------------
+
+- name: install - zabbix
+  gather_facts: yes
+  hosts: zabbix_grp
+  become: yes
+
+  roles:
+    - zabbix
+    - name: zabbix-agent
+      tags: zabbix
+
+
+# -----------------------------------------------------------------------------
+
+- name: install - ansible tower
+  gather_facts: yes
+  hosts: tower_grp
+  become: yes
+
+  roles:
+    - tower
+    - name: zabbix-agent
+      tags: tower
+...

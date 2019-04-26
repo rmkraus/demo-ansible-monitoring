@@ -1,0 +1,5 @@
+tower_version: "{{ lookup('env', 'TOWER_VERSION') }}"
+tower_admin_password: "{{ lookup('env', 'TOWER_ADMIN_PASSWORD') }}"
+tower_pg_password: "{{ lookup('env', 'TOWER_PG_PASSWORD') }}"
+tower_rabbitmq_password: "{{ lookup('env', 'TOWER_RABBITMQ_PASSWORD') }}"
+tower_license_file: "{{ lookup('env', 'TOWER_LICENSE_FILE') }}"

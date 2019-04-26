@@ -1,0 +1,86 @@
+- name: ensure zabbix install working directory exists
+  file:
+    path: "/var/local/ansible/zabbix"
+    state: directory
+  tags:
+    - zabbix-agent
+    - filesystem
+
+- name: ensure the installer rpm exists
+  get_url:
+    url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/rhel/7/x86_64/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+    dest: "/var/local/ansible/zabbix/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+  register: rpm_download
+  tags:
+    - zabbix-agent
+
+- name: ensure zabbix installer repos are configured
+  yum:
+    name: "/var/local/ansible/zabbix/zabbix-release-{{ zabbix_version }}-1.el7.noarch.rpm"
+    state: present
+  tags:
+    - zabbix-agent
+
+- name: ensure optional repos are enabled
+  command: yum-config-manager --enable '*optional*'
+  tags:
+    - zabbix-agent
+
+- name: ensure selinux is permissive
+  lineinfile:
+    line: 'SELINUX=permissive'
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+  register: selinux
+  tags:
+    - zabbix-agent
+
+- name: disable selinux now
+  command:
+    setenforce 0
+  when: selinux.changed
+  tags:
+    - zabbix-agent
+
+- name: ensure zabbix and deps are installed
+  yum:
+    name: 'zabbix-agent'
+    state: present
+  tags:
+    - zabbix-agent
+
+- name: ensure zabbix-agent is configured
+  template:
+    src: zabbix_agentd.conf.j2
+    dest: /etc/zabbix/zabbix_agentd.conf
+  notify: restart agent
+  tags:
+    - zabbix-agent
+
+- name: ensure log directory exists
+  file:
+    path: /var/log/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: 0770
+  tags:
+    - zabbix
+
+- name: ensure zabbix home dir exists
+  file:
+    path: /var/lib/zabbix
+    state: directory
+    owner: zabbix
+    group: zabbix
+    mode: 0770
+  tags:
+    - zabbix
+
+- name: ensure zabbix-agent is running/enabled
+  service:
+    name: zabbix-agent
+    state: started
+    enabled: yes
+  tags:
+    - zabbix-agent

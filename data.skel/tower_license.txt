@@ -1,0 +1,13 @@
+{"eula_accepted" : "true",
+   "subscription_name": "Enterprise Tower up to 100000 Nodes",
+   "features": {},
+   "instance_count": 100000,
+   "trial": false,
+   "contact_email": "maddux@hotdog.com",
+   "company_name": "Dr. Maddux Golden",
+   "license_type": "enterprise",
+   "contact_name": "Dr. Maddux Golden",
+   "license_date": 0000000000,
+   "license_key": "xxx111xx111xxx1x1x1x1x1x11x1xxxx1x1xx1x1xx1x1x1x1xxx111xx1x1xx1x"
+
+}

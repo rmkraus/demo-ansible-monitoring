@@ -1,0 +1,6 @@
+---
+# handlers file for tower
+- name: restart tower
+  service:
+    name: nginx
+    state: restarted

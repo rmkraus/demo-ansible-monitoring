@@ -1,0 +1,11 @@
+---
+# defaults file for tower
+tower_installer_repo: 'https://releases.ansible.com/ansible-tower/setup'
+tower_version: '3.4.3-1'
+tower_admin_password: ''
+tower_pg_password: ''
+tower_rabbitmq_password: ''
+tower_ssl_cert: ''
+tower_ssl_key: ''
+tower_custom_cert: no
+tower_license_file: ''

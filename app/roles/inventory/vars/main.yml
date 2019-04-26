@@ -1,0 +1,11 @@
+hosts:
+  - name: tower
+    grp: tower_grp
+  - name: zabbix
+    grp: zabbix_grp
+  - name: app-0
+    grp: app
+  - name: app-1
+    grp: app
+  - name: app-2
+    grp: app
