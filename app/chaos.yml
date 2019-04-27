@@ -1,0 +1,28 @@
+#!/usr/bin/ansible-playbook
+---
+# -----------------------------------------------------------------------------
+
+- name: bootstrap
+  gather_facts: no
+  hosts: localhost
+
+  roles:
+    - inventory
+
+# -----------------------------------------------------------------------------
+
+- name: chaos
+  gather_facts: no
+  hosts: app
+  become: yes
+  serial: 1
+
+  tasks:
+    - name: stop mysql
+      service:
+        name: mariadb
+        state: stopped
+
+    - name: take a break
+      pause:
+        seconds: 3

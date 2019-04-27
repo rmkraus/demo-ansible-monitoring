@@ -1,0 +1,14 @@
+- name: ensure mysql is running
+  yum:
+    name: mariadb-server
+    state: installed
+  tags:
+    - mysql
+
+- name: ensure mysql is running/enabled
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+  tags:
+    - mysql

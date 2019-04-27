@@ -5,7 +5,7 @@
     ansible_host: "{{ item.name }}.{{ lookup('env', 'DEMO_PREFIX') }}.{{ lookup('env', 'AWS_R53_DOMAIN') }}"
     ansible_ssh_private_key_file: '/data/id_rsa'
     ansible_user: ec2-user
-  loop: "{{ hosts }}"
+  loop: "{{ inventory_hosts }}"
   loop_control:
     label: "{{ item.name }}"
   changed_when: no

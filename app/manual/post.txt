@@ -26,7 +26,13 @@ These steps should be completed post deployment:
           Add
     c) Hosts should now start appearing. Restart zabbix-agent on clients for fatser results
     d) Administration -> Users
-      i) Change the Admin user password
+      i) Change the Admin user password - must be the same as Tower admin password
     e) Administration -> User Groups
       ii) Disable guest user group
-
+    f) Add App nodes to MySQL template
+    g) fix MySQL is Down check
+       {Template DB MySQL:mysql.ping.last(0)}=0 or {Template DB MySQL:mysql.ping.nodata(20)}=1
+       Update interval to 14s
+  2) Configure Ansible Tower
+    a) ensure localhost is not in the inventory
+    b) disable zabbix and tower in the inventory

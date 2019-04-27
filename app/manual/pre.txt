@@ -1,3 +1,5 @@
 This must be completed prior to deployment:
 
     1) A working Route 53 domain must be configured in AWS
+    2) Populate config file in data directory
+    3) Populate license file in data directory

@@ -1,0 +1,69 @@
+---
+- name: fix mysql
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Find file system with mysql data
+      shell: |
+        df --output=target /var/lib/mysql | tail -n1
+      async: 30
+      poll: 5
+      ignore_errors: yes
+      register: mysql_mount
+
+    - name: Fail on filesystem errors
+      assert:
+        that: mysql_mount is not failed
+        msg: 'There is an issue with /var/lib/mysql'
+
+    - name: Ensure filesystem has not filled up
+      assert:
+        that: item.size_available|float > item.size_total|float * 0.1
+        msg: '/var/lib/mysql has very little space remaining. Exiting.'
+      loop: "{{ ansible_mounts }}"
+      when: "item.mount == mysql_mount.stdout|trim"
+
+    - name: restart mysql service
+      service:
+        name: mariadb
+        state: restarted
+        enabled: yes
+
+    - name: login to zabbix
+      uri:
+        url: "{{ zabbix_server }}/api_jsonrpc.php"
+        method: POST
+        body_format: json
+        body:
+          jsonrpc: "2.0"
+          method: "user.login"
+          params:
+            user: "{{ zabbix_username }}"
+            password: "{{ zabbix_password }}"
+          id: 1
+          auth: null
+        validate_certs: no
+        follow_redirects: yes
+        status_code: 200
+      register: zabbix_login
+
+    - name: Acknowledge alert
+      uri:
+        url: "{{ zabbix_server }}/api_jsonrpc.php"
+        method: POST
+        body_format: json
+        body:
+          jsonrpc: "2.0"
+          method: "event.acknowledge"
+          params:
+            eventids: "{{ eventid }}"
+            action: 4
+            message: "Remediation attempted via Ansible Playbook ({{ ansible_date_time.date }} {{ ansible_date_time.time }})"
+          id: 1
+          auth: "{{ zabbix_login.json.result }}"
+        validate_certs: no
+        follow_redirects: yes
+        status_code: 200
+      register: ack
+      changed_when: "'error' not in ack.json"

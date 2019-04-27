@@ -1,0 +1,6 @@
+[general]
+username = admin
+password = {{ lookup('env', 'TOWER_ADMIN_PASSWORD') }}
+verify_ssl = False
+host = tower.{{ lookup('env', 'DEMO_PREFIX') }}.{{ lookup('env', 'AWS_R53_DOMAIN') }}
+

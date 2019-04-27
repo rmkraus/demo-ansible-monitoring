@@ -1,0 +1,209 @@
+- name: add hosts to ansible tower
+  uri:
+    url: "https://{{ ansible_host }}/api/v2/inventories/1/hosts/"
+    method: POST
+    user: "admin"
+    password: "{{ tower_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "{{ hostvars[item].inventory_hostname }}"
+      instance_id: "{{ index }}"
+      description: "{{ hostvars[item].inventory_hostname }}"
+      enabled: true
+      variables: 'ansible_host: "{{ hostvars[item].ansible_host }}"
+ansible_user: "ec2-user"'
+    validate_certs: no
+    follow_redirects: yes
+    status_code:
+      - 201
+      - 400
+  register: addhost
+  loop: "{{ groups['all'] }}"
+  loop_control:
+    index_var: index
+  when: 'hostvars[item].inventory_hostname != "localhost"'
+  changed_when: addhost.status|int == 201
+  tags:
+    - tower-init
+
+- name: create zabbix server credential type
+  uri:
+    url: "https://{{ ansible_host }}/api/v2/credential_types/"
+    method: POST
+    user: "admin"
+    password: "{{ tower_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      description: Zabbix
+      injectors:
+        extra_vars:
+          zabbix_password: "{% raw %}{{ zabbix_password }}{% endraw %}"
+          zabbix_server: "{% raw %}{{ zabbix_server }}{% endraw %}"
+          zabbix_username: "{% raw %}{{ zabbix_username }}{% endraw %}"
+      inputs:
+        fields:
+          - id: "zabbix_username"
+            label: "Username"
+            type: "string"
+          - id: "zabbix_server"
+            label: "Server"
+            type: "string"
+          - id: "zabbix_password"
+            label: "Password"
+            secret: true
+            type: "string"
+        required:
+          - "zabbix_username"
+          - "zabbix_server"
+          - "zabbix_password"
+      kind: "cloud"
+      name: "Zabbix"
+    validate_certs: no
+    follow_redirects: yes
+    status_code:
+      - 201
+      - 400
+  register: addcredtype
+  changed_when: addcredtype.status|int == 201
+  tags:
+    - tower-init
+
+- name: add ssh key to tower
+  uri:
+    url: "https://{{ ansible_host }}/api/v2/credentials/"
+    method: POST
+    user: "admin"
+    password: "{{ tower_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      credential_type: 1
+      description: "aws keys"
+      inputs:
+        become_method: "sudo"
+        ssh_key_data: "{{ lookup('file', '/data/id_rsa') }}"
+      name: "{{ lookup('env', 'DEMO_PREFIX') }}-ssh"
+      organization: 1
+      user: 1
+    validate_certs: no
+    follow_redirects: yes
+    status_code:
+      - 201
+      - 400
+  register: addkey
+  changed_when: addkey.status|int == 201
+  tags:
+    - tower-init
+
+- name: add zabbix cred to tower
+  uri:
+    url: "https://{{ ansible_host }}/api/v2/credentials/"
+    method: POST
+    user: "admin"
+    password: "{{ tower_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      credential_type: 15
+      description: "zabbix"
+      inputs:
+        zabbix_username: "Admin"
+        zabbix_password: "{{ tower_admin_password }}"
+        zabbix_server: "http://int.{{ hostvars.zabbix.ansible_host }}/zabbi/zabbix"
+      name: "{{ lookup('env', 'DEMO_PREFIX') }}-zabbix"
+      organization: 1
+      user: 1
+    validate_certs: no
+    follow_redirects: yes
+    status_code:
+      - 201
+      - 400
+  register: addzab
+  changed_when: addzab.status|int == 201
+  tags:
+    - tower-init
+
+- name: ensure playbook target exists
+  file:
+    name: "/var/lib/awx/projects/{{ lookup('env', 'DEMO_PREFIX') }}"
+    state: directory
+    owner: awx
+    group: awx
+    mode: 0755
+  tags:
+    - tower-init
+
+- name: ensure demo playbooks are loaded
+  copy:
+    src: "{{ item }}"
+    dest: "/var/lib/awx/projects/{{ lookup('env', 'DEMO_PREFIX') }}/{{ item }}"
+    owner: awx
+    group: awx
+    mode: 0644
+  loop:
+    - fix_mysql.yml
+  tags:
+    - tower-init
+    - update-project
+
+- name: add demo project to tower
+  uri:
+    url: "https://{{ ansible_host }}/api/v2/projects/"
+    method: POST
+    user: "admin"
+    password: "{{ tower_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      base_dir: "/var/lib/awx/projects"
+      custom_virtualenv: null
+      description: "{{ lookup('env', 'DEMO_PREFIX') }}"
+      local_path: "{{ lookup('env', 'DEMO_PREFIX') }}"
+      name: "{{ lookup('env', 'DEMO_PREFIX') }}"
+      organization: 1
+      scm_type: ""
+      scm_update_cache_timeout: "0"
+    validate_certs: no
+    follow_redirects: yes
+    status_code:
+      - 201
+      - 400
+  register: addproj
+  changed_when: addproj.status|int == 201
+  tags:
+    - tower-init
+
+- name: ensure epel install working directory exists
+  file:
+    path: "/var/local/ansible/epel"
+    state: directory
+  tags:
+    - tower-init
+    - epel
+    - filesystem
+
+- name: ensure the installer rpm exists
+  get_url:
+    url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+    dest: "/var/local/ansible/epel/epel-release-latest-7.noarch.rpm"
+  register: rpm_download
+  tags:
+    - tower-init
+    - epel
+
+- name: ensure epel installer repos are configured
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+    state: present
+  tags:
+    - tower-init
+    - epel
+
+- name: ensure zabbix api is installed
+  yum:
+    name: python2-zabbix-api-erigones.noarch
+    state: present
+  tags:
+    - tower-init

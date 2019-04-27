@@ -1,0 +1,52 @@
+- name: ensure epel install working directory exists
+  file:
+    path: "/var/local/ansible/epel"
+    state: directory
+  tags:
+    - towercli
+    - epel
+    - filesystem
+
+- name: ensure the installer rpm exists
+  get_url:
+    url: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+    dest: "/var/local/ansible/epel/epel-release-latest-7.noarch.rpm"
+  register: rpm_download
+  tags:
+    - towercli
+    - epel
+
+- name: ensure epel installer repos are configured
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+    state: present
+  tags:
+    - towercli
+    - epel
+
+- name: ensure tower-cli is installed
+  yum:
+    name: python-ansible-tower-cli
+    state: present
+  tags:
+    - towercli
+
+- name: ensure tower-cli is configured
+  template:
+    src: tower_cli.cfg.j2
+    dest: /etc/tower/tower_cli.cfg
+    owner: root
+    group: zabbix
+    mode: 0750
+  tags:
+    - towercli
+
+- name: ensure awx_id_extract is installed
+  template:
+    src: awx_id_extract.sh.j2
+    dest: /usr/local/bin/awx_id_extract.sh
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - towercli

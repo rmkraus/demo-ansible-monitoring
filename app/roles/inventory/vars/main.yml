@@ -1,4 +1,4 @@
-hosts:
+inventory_hosts:
   - name: tower
     grp: tower_grp
   - name: zabbix

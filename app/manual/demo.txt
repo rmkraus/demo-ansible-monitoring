@@ -1,0 +1,8 @@
+1) Create Job Templates for each playbook with SSH and Zabbix Credentials.
+   Also include a survey as documented here: https://www.redhat.com/en/blog/adding-remediation-zabbix-using-ansible-tower
+
+2) add awx_id to zabbix mysql check
+
+3) Create Zabbix Action
+
+4) Fail resource

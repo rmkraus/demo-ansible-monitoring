@@ -65,7 +65,8 @@
     - zabbix
     - name: zabbix-agent
       tags: zabbix
-
+    - name: towercli
+      tags: zabbix
 
 # -----------------------------------------------------------------------------
 
@@ -78,4 +79,19 @@
     - tower
     - name: zabbix-agent
       tags: tower
+    - name: tower-init
+      tags: tower
+
+# -----------------------------------------------------------------------------
+
+- name: install - app nodes
+  gather_facts: yes
+  hosts: app
+  become: yes
+
+  roles:
+    - name: mysql
+      tags: app
+    - name: zabbix-agent
+      tags: app
 ...
