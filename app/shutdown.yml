@@ -1,0 +1,24 @@
+#!/usr/bin/ansible-playbook
+---
+# -----------------------------------------------------------------------------
+
+- name: shutdown
+  gather_facts: no
+  hosts: localhost
+
+  tasks:
+    - name: read terraform db
+      set_fact:
+        tfdb: "{{ lookup('file', '/data/terraform.tfstate') | from_json }}"
+
+    - name: shutdown
+      ec2:
+        instance_ids: "{{ tfdb.modules.0.resources[item].primary.attributes.id }}"
+        state: "stopped"
+        wait: False
+      loop:
+        - aws_instance.zabbix
+        - aws_instance.tower
+        - aws_instance.app.0
+        - aws_instance.app.1
+        - aws_instance.app.2

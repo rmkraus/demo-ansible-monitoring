@@ -1,0 +1,24 @@
+#!/usr/bin/ansible-playbook
+---
+# -----------------------------------------------------------------------------
+
+- name: startup
+  gather_facts: no
+  hosts: localhost
+
+  tasks:
+    - name: read terraform db
+      set_fact:
+        tfdb: "{{ lookup('file', '/data/terraform.tfstate') | from_json }}"
+
+    - name: startup
+      ec2:
+        instance_ids: "{{ tfdb.modules.0.resources[item].primary.attributes.id }}"
+        state: "running"
+        wait: False
+      loop:
+        - aws_instance.zabbix
+        - aws_instance.tower
+        - aws_instance.app.0
+        - aws_instance.app.1
+        - aws_instance.app.2

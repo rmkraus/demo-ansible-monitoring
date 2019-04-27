@@ -12,6 +12,7 @@ RUN dnf install -y \
         less \
         openssh \
         openssh-clients \
+        python2-boto \
         unzip \
         vim \
         wget \
