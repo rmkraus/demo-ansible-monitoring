@@ -74,7 +74,7 @@
     - zabbix
 
 - name: ensure db schema is loaded
-  command: |
+  shell: |
     zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -pzabbix zabbix
   args:
     creates: /var/lib/mysql/zabbix/acknowledges.frm
