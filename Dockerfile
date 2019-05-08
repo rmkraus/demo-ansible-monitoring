@@ -47,4 +47,4 @@ COPY app /app
 
 # Setup startup environment
 USER demo
-CMD /bin/bash
+CMD /app/bin/entry.sh
