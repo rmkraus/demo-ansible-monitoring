@@ -2,6 +2,19 @@
 
 Before you are able to create this demo, you must have an AWS account with a working Route 53 domain setup. The demo scripts will handle the rest.
 
+## Administration Scripts
+
+The following scripts are included in the `/app` directory in the container. They should be used for administering the demo environment.
+
+  - `chaos.yml` - Ansible Playbook to cause controlled chaos.
+  - `connect.sh` - Bash script that will open an SSH session to the specified host. Usage: `./connect.sh [tower|zabbix|app-0|app-1|app-2]`
+  - `deploy.yml` - Ansible Playbook to deploy and configure the demo environment.
+  - `destroy.yml` - Ansible Playbook to cleanly remove the demo environment from AWS.
+  - `shutdown.yml` - Ansible Playbook to shutdown all the hosts in the environment. This will not remove them from AWS.
+  - `startup.yml` - Ansible Playbook to startup all the hosts in the environment.
+
+## Procedure
+
 Use the following steps to create and prepare the demo environment.
 
 1. Pull the latest container image, and create a local directory that will be used for storing your demo's configuration and setup data.
