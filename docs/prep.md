@@ -1,6 +1,13 @@
 # Demo Preparation
 
-Before you are able to create this demo, you must have an AWS account with a working Route 53 domain setup. The demo scripts will handle the rest.
+## Prerequisites
+
+Before you are able to create this demo:
+  - You must have an AWS account with a working Route 53 domain setup.
+  - Your AWS account must have sufficient rights to create gateways, routes, subnets, network acls, key pairs, security groups, and ec2 instances.
+  - You must also have a valid Ansible Tower license.
+
+The demo scripts will handle the rest.
 
 ## Administration Scripts
 
@@ -31,6 +38,9 @@ docker run \
     --mount type=bind,src=/full/path/to/demo-data,dst=/data \
     --name demo \
     -it rmkraus/demo-ansible-monitoring:latest
+
+# after exit, the container can be restarted with
+docker start -i demo
 ```
 
 3. The container will populate the data directory with a skeleton configuration and initialize the internal Terraform database. Update the `/date/config.sh` and `/data/tower-license.txt` files with the data for your demo.
@@ -61,4 +71,5 @@ docker run \
   6. Wait a few minutes and all the hosts should start to appear under `Configuration -> Hosts`.
   7. Under `Configuration -> Hosts`; select app-0, app-1, and app-2; and click `Mass update`. In the `Templates` tab, check `Link templates`, add `Template DB MySQL` to the text box, and click `Update`.
   8. Go to `Configuration -> Templates -> Template DB MySQL -> Triggers` and change the `MySQL is down` trigger expression to `{Template DB MySQL:mysql.ping.last(0)}=0 or {Template DB MySQL:mysql.ping.nodata(20)}=1`.
-  9. Go to `Configuration -> Templates -> Template DB MySQL -> Items` and update the `MySQL status` item to have an update interval of 14s.
+  9. Also in `Configuration -> Templates -> Template DB MySQL -> Triggers`, make the `MySQL status` trigger dependent on the `Template OS Linux | Zabbix agent on Template OS Linux is unreachable for 5 minutes` trigger.
+  10. Go to `Configuration -> Templates -> Template DB MySQL -> Items` and update the `MySQL status` item to have an update interval of 14s.

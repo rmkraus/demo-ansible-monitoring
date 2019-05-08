@@ -45,9 +45,20 @@
   args:
     chdir: "/var/local/ansible/tower/ansible-tower-setup-{{ tower_version }}"
     creates: "/usr/bin/ansible-tower-service"
+  async: 500
+  poll: 5
+  register: tower_sleeper
   tags:
     - tower
     - packages
+
+- name: wait for tower install to finish
+  async_status:
+    jid: "{{ tower_sleeper.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 500
+  delay: 1
 
 - name: ensure custom ssl certificates are installed
   copy:

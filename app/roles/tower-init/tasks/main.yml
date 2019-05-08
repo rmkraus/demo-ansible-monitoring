@@ -11,8 +11,9 @@
       instance_id: "{{ index }}"
       description: "{{ hostvars[item].inventory_hostname }}"
       enabled: true
-      variables: 'ansible_host: "{{ hostvars[item].ansible_host }}"
-ansible_user: "ec2-user"'
+      variables: |
+        ansible_host: "{{ hostvars[item].ansible_host }}"
+        ansible_user: "ec2-user"
     validate_certs: no
     follow_redirects: yes
     status_code:
@@ -111,7 +112,7 @@ ansible_user: "ec2-user"'
       inputs:
         zabbix_username: "Admin"
         zabbix_password: "{{ tower_admin_password }}"
-        zabbix_server: "http://int.{{ hostvars.zabbix.ansible_host }}/zabbi/zabbix"
+        zabbix_server: "http://int.{{ hostvars.zabbix.ansible_host }}/zabbix"
       name: "{{ lookup('env', 'DEMO_PREFIX') }}-zabbix"
       organization: 1
       user: 1

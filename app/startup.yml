@@ -1,7 +1,5 @@
 #!/usr/bin/ansible-playbook
 ---
-# -----------------------------------------------------------------------------
-
 - name: startup
   gather_facts: no
   hosts: localhost
@@ -22,3 +20,9 @@
         - aws_instance.app.0
         - aws_instance.app.1
         - aws_instance.app.2
+
+    - include_role: inventory
+
+    - name: ensure hosts are reachable
+      wait_for_connection:
+        sleep: 15

@@ -53,6 +53,17 @@
         name: '*'
         state: latest
       notify: reboot
+      async: 500
+      poll: 5
+      register: yum_sleeper
+
+    - name: wait for update to finish
+      async_status:
+        jid: "{{ yum_sleeper.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 500
+      delay: 1
 
 # -----------------------------------------------------------------------------
 
